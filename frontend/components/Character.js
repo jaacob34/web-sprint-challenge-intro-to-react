@@ -1,30 +1,55 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
+const urlPlanets = 'http://localhost:9009/api/planets';
 
-function Character({ people, planets }) { // ❗ Add the props
-  // ❗ Create a state to hold whether the homeworld is rendering or not
-  // ❗ Create a "toggle" click handler to show or remove the homeworld
-  const [activeId, setActiveId] = useState(null);
+function Character({ people }) {
+  const [planets, setPlanets] = useState([]); // Store the list of planets
+  const [activeIds, setActiveIds] = useState([]); // Track active character cards
+
+  // Fetch planet data once when the component mounts
+  useEffect(() => {
+    axios.get(urlPlanets)
+      .then(res => {
+        setPlanets(res.data); // Set all planets in state
+      })
+      .catch(err => {
+        console.log('Error fetching planet data:', err.message);
+      });
+  }, []);
 
   const toggleHome = (id) => {
-    setActiveId(activeId === id ? null : id); // Toggle the active ID
+    setActiveIds(prevActiveIds => {
+      if (prevActiveIds.includes(id)) {
+        // If the ID is already in activeIds, remove it (hide the planet)
+        return prevActiveIds.filter(activeId => activeId !== id);
+      } else {
+        // If the ID is not in activeIds, add it (show the planet)
+        return [...prevActiveIds, id];
+      }
+    });
   };
 
   return (
     <div>
       {people.map(person => (
-        <div className='character-card' key={person.id}>
-          <h3 className='character-name' onClick={() => toggleHome(person.id)}>{person.name}</h3>
-          
-          {activeId === person.id && (
-          <p>Planet: <span className='character-planet'>
-            {planets.find((planet) => planet.id === person.homeworld)?.name || "Unknown Planet"}</span>
-          </p>
+        <div className="character-card" key={person.id} onClick={() => toggleHome(person.id)}>
+          <h3 className="character-name">
+            {person.name}
+          </h3>
+
+          {activeIds.includes(person.id) && (
+            <p className="character-planet">
+              Planet: 
+              <span>
+                {planets.find((planet) => planet.id === person.homeworld)?.name || "Unknown Planet"}
+              </span>
+            </p>
           )}
         </div>
       ))}
     </div>
-  )
+  );
 }
 
-export default Character
+export default Character;
